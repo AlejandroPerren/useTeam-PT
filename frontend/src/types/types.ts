@@ -1,6 +1,7 @@
 
 
 export type Column = {
-  id: string
+  _id: string
   title: string
+  boardId: string
 }

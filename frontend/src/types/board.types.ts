@@ -1,12 +1,12 @@
 export interface Board {
   _id: string
   name: string
-  createdAt: string
+  createdBy: string
 }
 
 export interface CreateBoardBody {
   name: string
-  description?: string
+  createdBy: string
 }
 
 export interface UpdateBoardBody {
