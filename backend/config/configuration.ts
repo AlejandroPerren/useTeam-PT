@@ -1,7 +1,7 @@
 export default () => ({
-  port: parseInt(process.env.PORT!, 10) || 3000,
+  port: parseInt(process.env.PORT ?? '3000', 10),
   database: {
-    host: process.env.DATABASE_HOST,
-    port: parseInt(process.env.DATABASE_PORT!, 10) || 5432,
+    uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/kanban-board',
   },
+  n8nWebhookUrl: process.env.N8N_WEBHOOK_URL,
 });
