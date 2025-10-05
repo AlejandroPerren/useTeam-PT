@@ -1,8 +1,11 @@
+import TasksCard from './components/Tasks/TasksCard'
 
 function App() {
-  return <div>
-    <h1 className="text-red-600 text-3xl">Hola</h1>
-  </div>;
+  return (
+    <div>
+      <TasksCard />
+    </div>
+  )
 }
 
-export default App;
+export default App
