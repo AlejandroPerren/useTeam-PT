@@ -1,11 +1,14 @@
-import TasksCard from './components/Tasks/TasksCard'
+import { Outlet } from 'react-router-dom'
+import Header from './components/Header/Header'
 
-function App() {
+
+export default function App() {
   return (
-    <div>
-      <TasksCard />
+    <div className="min-h-screen ">
+      <Header />
+      <main className="p-4">
+        <Outlet /> 
+      </main>
     </div>
   )
 }
-
-export default App
