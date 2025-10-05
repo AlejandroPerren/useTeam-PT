@@ -1,4 +1,4 @@
-export type FetchMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
+export type FetchMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'| 'PATCH' 
 
 export interface FetchOptions<TBody = unknown> {
   method?: FetchMethod // Méthods HTTP (por defecto GET)
@@ -7,10 +7,11 @@ export interface FetchOptions<TBody = unknown> {
 }
 
 // Generic function reutilizable
-export async function apiFetch<TResponse = unknown, TBody = unknown>(
+export async function apiFetch<TData = unknown, TBody = unknown>(
   endpoint: string,
   options: FetchOptions<TBody> = {},
-): Promise<{ ok: boolean; data: TResponse | null; error?: string }> {
+): Promise<{ ok: boolean; data: TData | null; error?: string }> {
+  console.log(endpoint)
   try {
     const res = await fetch(endpoint, {
       method: options.method || 'GET', // method ? get : method
@@ -32,7 +33,7 @@ export async function apiFetch<TResponse = unknown, TBody = unknown>(
       }
     }
 
-    return { ok: true, data: json }
+    return { ok: true, data: json as TData }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Fallo de red'
     return { ok: false, data: null, error: message }
