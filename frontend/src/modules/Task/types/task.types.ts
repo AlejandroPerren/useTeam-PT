@@ -11,10 +11,10 @@ export interface Task {
 
 export interface CreateTaskBody {
   title: string
-  description?: string
+  description: string | undefined
   boardId: string
   columnId: string
-  order?: number
+  order: number | undefined
   createdAt: string
 }
 
