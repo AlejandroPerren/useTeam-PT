@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import DropdownModal from '../ui/DropDownModal'
-import BoardForm from '../Board/BoardForm'
 import { SecondaryButton } from '../ui/SecundaryButton'
+import BoardForm from '../../modules/Board/components/BoardForm'
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)

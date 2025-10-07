@@ -8,7 +8,7 @@ export const router = createHashRouter([
     path: '/',
     element: <App />,
     children: [
-      { index: true, element: <KanbanBoardsList/> },
+      { index: true, element: <KanbanBoardsList /> },
       { path: 'kanban', element: <KanbanBoard /> },
     ],
   },
