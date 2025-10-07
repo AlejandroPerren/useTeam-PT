@@ -1,92 +1,63 @@
-import { useEffect, useState, useMemo } from 'react'
-
-import { DndContext, DragOverlay, type DragStartEvent } from '@dnd-kit/core'
+import { DndContext, DragOverlay } from '@dnd-kit/core'
 import { SortableContext } from '@dnd-kit/sortable'
 import { createPortal } from 'react-dom'
-import type { Column } from '../types/types'
-import {
-  createColumn,
-  getColumns,
-  updateColumn,
-} from '../network/fetch/Columns'
-import ColumnContainer from '../components/Columns/ColumnContainer'
+import { useColumnSocket } from '../modules/Columns/hooks/useColumnSocket'
+import { useDragAndDrop } from '../hooks/useDragAndDrop'
+import { AddColumnButton } from '../modules/Board/components/AddColumnButton'
+import { ColumnContainer } from '../modules/Columns/components/ColumnContainer'
 
 const KanbanBoard = () => {
-  const [columns, setColumns] = useState<Column[]>([])
-  const columnsId = useMemo(() => columns.map((col) => col._id), [columns])
-  const [activeColumn, setActiveColumn] = useState<Column | null>(null)
-  const boardId = localStorage.getItem('selectedBoard') || ''
+  const {
+    columns,
+    socket,
+    boardId,
+    handleCreateColumn,
+    hoverColumnId,
+    setHoverColumnId,
+    setTasksVersion,
+  } = useColumnSocket()
 
-  // Traer columnas reales
-  useEffect(() => {
-    const fetchColumns = async () => {
-      try {
-        const response = await getColumns(boardId)
-        if (response.ok && response.data) {
-          setColumns(response.data.filter((col) => col.boardId === boardId))
-        }
-      } catch (err) {
-        console.error(err)
-      }
-    }
-    if (boardId) fetchColumns()
-  }, [boardId])
-
-  // Crear columna real
-  const handleCreateColumn = async () => {
-    if (!boardId) return
-    const newColumn = {
-      title: `Nueva columna ${columns.length + 1}`,
+  const { sensors, activeItem, onDragStart, onDragOver, onDragEnd } =
+    useDragAndDrop({
+      columns,
+      socket,
       boardId,
-      order: columns.length,
-    }
-
-    try {
-      const res = await createColumn(newColumn)
-      if (res.ok && res.data) setColumns([...columns, res.data])
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
-  const onDragStart = (event: DragStartEvent) => {
-    if (event.active.data.current?.type === 'Column') {
-      setActiveColumn(event.active.data.current.column)
-    }
-  }
-
-  const onDragEnd = async () => {
-    setActiveColumn(null)
-    // Guardar el nuevo orden
-    try {
-      for (let i = 0; i < columns.length; i++) {
-        await updateColumn(columns[i]._id, { order: i })
-      }
-    } catch (err) {
-      console.error(err)
-    }
-  }
+      setHoverColumnId,
+      setTasksVersion,
+    })
 
   return (
-    <div className="m-auto flex min-h-screen w-full items-center overflow-x-auto overflow-y-hidden px-[40px] gap-4">
-      <DndContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
-        <SortableContext items={columnsId}>
+    <div className="m-auto flex min-h-screen w-full items-start overflow-x-auto overflow-y-hidden px-[40px] gap-4 py-6">
+      <DndContext
+        sensors={sensors}
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDragEnd={onDragEnd}
+      >
+        <SortableContext items={columns.map((c) => c._id)}>
           {columns.map((col) => (
-            <ColumnContainer key={col._id} column={col} />
+            <ColumnContainer
+              key={col._id}
+              column={col}
+              highlight={hoverColumnId === col._id}
+            />
           ))}
         </SortableContext>
 
-        <button
-          onClick={handleCreateColumn}
-          className="h-[60px] w-[350px] min-w-[350px] cursor-pointer rounded-lg bg-gray-800 border-2 border-gray-950 ring-rose-500 hover:ring-2 self-start mt-4"
-        >
-          Add Column
-        </button>
+        <AddColumnButton onCreate={handleCreateColumn} />
 
         <DragOverlay>
-          {activeColumn &&
+          {activeItem &&
             createPortal(
-              <ColumnContainer column={activeColumn} />,
+              activeItem.type === 'Column' ? (
+                <div className="bg-gray-800 w-[350px] rounded-md p-2 shadow-2xl">
+                  {activeItem.column.title}
+                </div>
+              ) : (
+                <div className="bg-gray-900 rounded-md p-2 text-sm shadow-2xl">
+                  {activeItem.task.title}
+                </div>
+              ),
               document.body,
             )}
         </DragOverlay>
