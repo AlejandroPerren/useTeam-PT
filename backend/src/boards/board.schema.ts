@@ -8,6 +8,9 @@ export class Board extends Document {
 
   @Prop()
   description: string;
+
+  @Prop()
+  createdBy: string;
 }
 
 export const BoardSchema = SchemaFactory.createForClass(Board);
