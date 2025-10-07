@@ -1,11 +1,12 @@
 import { useForm } from 'react-hook-form'
-import { InputField } from '../ui/InputFiled'
+
 import { yupResolver } from '@hookform/resolvers/yup'
 import { useNavigate } from 'react-router-dom'
-import type { CreateBoardBody } from '../../types/board.types'
-import { createBoardSchema } from '../../schemas/board.schema'
-import { createBoard } from '../../network/fetch/Boards'
-import { PrimaryButton } from '../ui/PrimaryButton'
+import type { CreateBoardBody } from '../types/board.types'
+import { createBoardSchema } from '../schema/board.schema'
+import { createBoard } from '../network/Boards'
+import { InputField } from '../../../components/ui/InputFiled'
+import { PrimaryButton } from '../../../components/ui/PrimaryButton'
 
 const BoardForm = () => {
   const navigate = useNavigate()
@@ -25,7 +26,7 @@ const BoardForm = () => {
 
       if (board.ok && board.data) {
         localStorage.setItem('selectedBoard', board.data._id)
-        localStorage.setItem('currentUser', board.data.createdBy)
+        localStorage.setItem('userName', board.data.createdBy)
       }
 
       console.log('Board creado y guardado en localStorage!')

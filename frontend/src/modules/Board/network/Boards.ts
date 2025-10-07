@@ -1,10 +1,10 @@
+import { apiFetch } from '../../../utils/API/FetchApi'
+import { summaryApi } from '../../../utils/API/SummaryApi'
 import type {
   UpdateBoardBody,
   Board,
   CreateBoardBody,
-} from '../../types/board.types'
-import { apiFetch } from '../utils/FetchApi'
-import { summaryApi } from '../utils/SummaryApi'
+} from '../types/board.types'
 
 export const getBoards = async () => {
   return apiFetch<Board>(summaryApi.Boards.url)
