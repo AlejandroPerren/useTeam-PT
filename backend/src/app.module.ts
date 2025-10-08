@@ -1,12 +1,9 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
+import { BoardModule } from './board/board.module';
+import { WebSocketModule } from './websocket/websocket.module';
 import configuration from '../config/configuration';
-
-import { BoardsModule } from './boards/boards.module';
-import { ColumnsModule } from './columns/columns.module';
-import { TasksModule } from './tasks/tasks.module';
-// import { ExportModule } from './export/export.module';
 
 @Module({
   imports: [
@@ -14,7 +11,6 @@ import { TasksModule } from './tasks/tasks.module';
       load: [configuration],
       envFilePath: `./env/.env.${process.env.NODE_ENV || 'development'}`,
       isGlobal: true,
-      // ExportModule,
     }),
 
     MongooseModule.forRootAsync({
@@ -25,9 +21,8 @@ import { TasksModule } from './tasks/tasks.module';
       inject: [ConfigService],
     }),
 
-    BoardsModule,
-    ColumnsModule,
-    TasksModule,
+    BoardModule,
+    WebSocketModule,
   ],
 })
 export class AppModule {}
