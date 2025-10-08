@@ -9,9 +9,12 @@ export const useKanbanBoard = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const [tasksOrderInColumn, setTasksOrderInColumn] = useState<Record<string, string[]>>({});
+  const [tasksOrderInColumn, setTasksOrderInColumn] = useState<
+    Record<string, string[]>
+  >({});
 
   const boardId = localStorage.getItem("selectedBoard") || "";
+  const userName = localStorage.getItem("userName") || "Usuario";
   const columnsId = useMemo(() => columns.map((col) => col._id), [columns]);
 
   const normalizeColumn = (col: Column): Column => ({
@@ -24,55 +27,59 @@ export const useKanbanBoard = () => {
   useEffect(() => {
     connectSocket.emit("joinBoard", boardId);
 
-    connectSocket.on("on-columns-initial", (cols) => setColumns(cols.map(normalizeColumn)));
-    connectSocket.on("on-column-created", (col) => setColumns((prev) => [...prev, normalizeColumn(col)]));
-    connectSocket.on("on-column-updated", (col) =>
-      setColumns((prev) => prev.map((c) => (c._id === col._id ? normalizeColumn(col) : c)))
-    );
-    connectSocket.on("on-column-deleted", (col) => setColumns((prev) => prev.filter((c) => c._id !== col._id)));
-    connectSocket.on("on-columns-reordered", (cols) => setColumns(cols.map(normalizeColumn)));
+    const handleColumnsInitial = (cols: Column[]) => setColumns(cols.map(normalizeColumn));
+    const handleColumnCreated = (col: Column) => setColumns((prev) => [...prev, normalizeColumn(col)]);
+    const handleColumnUpdated = (col: Column) => setColumns((prev) => prev.map((c) => (c._id === col._id ? normalizeColumn(col) : c)));
+    const handleColumnDeleted = (col: Column) => setColumns((prev) => prev.filter((c) => c._id !== col._id));
+    const handleColumnsReordered = (cols: Column[]) => setColumns(cols.map(normalizeColumn));
 
-    connectSocket.on("on-tasks-initial", (serverTasks) => {
-      setTasks(serverTasks);
-    });
+    const handleTasksInitial = (serverTasks: Task[]) => setTasks(serverTasks);
+    const handleTaskCreated = (newTask: Task) => setTasks((prev) => [...prev, newTask]);
+    const handleTaskUpdated = (updatedTask: Task) => setTasks((prev) => prev.map((task) => (task._id === updatedTask._id ? updatedTask : task)));
+    const handleTaskDeleted = (deletedTask: { _id: string }) => setTasks((prev) => prev.filter((task) => task._id !== deletedTask._id));
 
-    connectSocket.on("on-task-created", (task) => {
-      setTasks((prev) => [...prev, task]);
-    });
+    connectSocket.on("on-columns-initial", handleColumnsInitial);
+    connectSocket.on("on-column-created", handleColumnCreated);
+    connectSocket.on("on-column-updated", handleColumnUpdated);
+    connectSocket.on("on-column-deleted", handleColumnDeleted);
+    connectSocket.on("on-columns-reordered", handleColumnsReordered);
 
-    connectSocket.on("on-task-updated", (updated) => {
-      setTasks((prev) => prev.map((t) => (t._id === updated._id ? updated : t)));
-    });
-
-    connectSocket.on("on-task-deleted", (deleted) => {
-      setTasks((prev) => prev.filter((t) => t._id !== deleted._id));
-    });
+    connectSocket.on("on-tasks-initial", handleTasksInitial);
+    connectSocket.on("on-task-created", handleTaskCreated);
+    connectSocket.on("on-task-updated", handleTaskUpdated);
+    connectSocket.on("on-task-deleted", handleTaskDeleted);
 
     connectSocket.on("on-task-order-changed", ({ columnId, taskId, newOrder }) => {
-      setTasks((prev) => {
-        const filtered = prev.filter((t) => t._id !== taskId);
-        const movedTask = prev.find((t) => t._id === taskId);
-        if (!movedTask) return prev;
+      setTasks((prevTasks) => {
+        const taskToMove = prevTasks.find((t) => t._id === taskId);
+        if (!taskToMove) return prevTasks;
 
-        const columnTasks = filtered.filter((t) => t.columnId === columnId);
-        columnTasks.splice(newOrder, 0, movedTask);
-        const otherTasks = filtered.filter((t) => t.columnId !== columnId);
+        const remainingTasks = prevTasks.filter((t) => t._id !== taskId);
 
-        return [...otherTasks, ...columnTasks];
+        const columnTasks = remainingTasks.filter((t) => t.columnId === columnId);
+
+        columnTasks.splice(newOrder, 0, taskToMove);
+
+        const otherColumnTasks = remainingTasks.filter(
+          (t) => t.columnId !== columnId
+        );
+
+        return [...otherColumnTasks, ...columnTasks];
       });
     });
 
     return () => {
-      connectSocket.off("on-columns-initial");
-      connectSocket.off("on-column-created");
-      connectSocket.off("on-column-updated");
-      connectSocket.off("on-column-deleted");
-      connectSocket.off("on-columns-reordered");
-      connectSocket.off("on-tasks-initial");
-      connectSocket.off("on-task-created");
-      connectSocket.off("on-task-updated");
-      connectSocket.off("on-task-deleted");
-      connectSocket.off("on-task-order-changed");
+      connectSocket.off("on-columns-initial", handleColumnsInitial);
+      connectSocket.off("on-column-created", handleColumnCreated);
+      connectSocket.off("on-column-updated", handleColumnUpdated);
+      connectSocket.off("on-column-deleted", handleColumnDeleted);
+      connectSocket.off("on-columns-reordered", handleColumnsReordered);
+
+      connectSocket.off("on-tasks-initial", handleTasksInitial);
+      connectSocket.off("on-task-created", handleTaskCreated);
+      connectSocket.off("on-task-updated", handleTaskUpdated);
+      connectSocket.off("on-task-deleted", handleTaskDeleted);
+      connectSocket.off("on-task-order-changed", handleTasksInitial);
     };
   }, [boardId]);
 
@@ -92,6 +99,27 @@ export const useKanbanBoard = () => {
     connectSocket.emit("deleteColumn", { id: columnId, boardId });
   };
 
+  const handleCreateTask = (columnId: string, title: string) => {
+    if (!title.trim()) return;
+    connectSocket.emit("createTask", {
+      title,
+      columnId,
+      boardId,
+      creadoPor: userName,
+    });
+  };
+
+  const handleUpdateTask = (
+    taskId: string,
+    updates: Partial<Omit<Task, "_id">>
+  ) => {
+    connectSocket.emit("updateTask", {
+      id: taskId,
+      updates: { ...updates, editadoPor: userName },
+      boardId,
+    });
+  };
+
   const handleDeleteTask = (taskId: string) => {
     connectSocket.emit("deleteTask", { id: taskId, boardId });
   };
@@ -105,56 +133,94 @@ export const useKanbanBoard = () => {
   };
 
   const onDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
     setActiveColumn(null);
     setActiveTask(null);
 
-    if (!active || !over || active.id === over.id) return;
+    const { active, over } = event;
+    if (!over) return;
 
-    const activeType = active.data.current?.type;
-    const overType = over.data.current?.type;
+    const activeId = active.id as string;
+    const overId = over.id as string;
 
-    if (activeType === "Column" && overType === "Column") {
-      const oldIndex = columns.findIndex((col) => col._id === active.id);
-      const newIndex = columns.findIndex((col) => col._id === over.id);
-      if (oldIndex === -1 || newIndex === -1) return;
+    if (activeId === overId) return;
 
-      const updated = [...columns];
-      const [moved] = updated.splice(oldIndex, 1);
-      updated.splice(newIndex, 0, moved);
-      setColumns(updated);
+    const isActiveAColumn = active.data.current?.type === "Column";
+    if (isActiveAColumn) {
+      setColumns((prev) => {
+        const activeColumnIndex = prev.findIndex((col) => col._id === activeId);
+        const overColumnIndex = prev.findIndex((col) => col._id === overId);
 
-      connectSocket.emit("changeColumnOrder", {
-        columnId: active.id,
-        newOrder: newIndex,
+        const reordered = [...prev];
+        const [moved] = reordered.splice(activeColumnIndex, 1);
+        reordered.splice(overColumnIndex, 0, moved);
+
+        connectSocket.emit("changeColumnOrder", {
+          boardId,
+          columnId: activeId,
+          newOrder: overColumnIndex,
+        });
+
+        return reordered;
       });
+      return;
     }
 
-    if (activeType === "Task" && (overType === "Task" || overType === "Column")) {
-      const activeTask = active.data.current.task;
-      const overTask = over.data.current?.task;
-      const toColumnId = overTask?.columnId || over.id;
-      const fromColumnId = activeTask.columnId;
+    const isActiveATask = active.data.current?.type === "Task";
+    if (isActiveATask) {
+      setTasks((prev) => {
+        const activeIndex = prev.findIndex((t) => t._id === activeId);
+        const overIndex = prev.findIndex((t) => t._id === overId);
+        const activeTask = prev[activeIndex];
 
-      if (fromColumnId !== toColumnId) {
-        connectSocket.emit("updateTask", {
-          id: activeTask._id,
-          updates: {
+        if (!activeTask) return prev;
+
+        const toColumnId =
+          over.data.current?.type === "Column"
+            ? overId
+            : prev[overIndex]?.columnId;
+
+        if (!toColumnId) return prev;
+
+        const fromColumnId = activeTask.columnId;
+        const reorderedTasks = [...prev];
+        const [movedTask] = reorderedTasks.splice(activeIndex, 1);
+        const finalTask = { ...movedTask, columnId: toColumnId };
+
+        const finalOverIndex = reorderedTasks.findIndex((t) => t._id === overId);
+
+        if (finalOverIndex !== -1) {
+          reorderedTasks.splice(finalOverIndex, 0, finalTask);
+        } else {
+          const lastTaskIndexInColumn = reorderedTasks
+            .map((t) => t.columnId)
+            .lastIndexOf(toColumnId);
+          if (lastTaskIndexInColumn !== -1) {
+            reorderedTasks.splice(lastTaskIndexInColumn + 1, 0, finalTask);
+          } else {
+            reorderedTasks.push(finalTask);
+          }
+        }
+
+        if (fromColumnId !== toColumnId) {
+          connectSocket.emit("updateTask", {
+            id: activeId,
+            updates: { columnId: toColumnId, editadoPor: userName },
+            boardId,
+          });
+        } else {
+          const newOrderInColumn = reorderedTasks
+            .filter((t) => t.columnId === toColumnId)
+            .findIndex((t) => t._id === activeId);
+
+          connectSocket.emit("changeTaskOrder", {
+            taskId: activeId,
             columnId: toColumnId,
-            editadoPor: "Alejandro",
-          },
-          boardId,
-        });
-      } else {
-        const taskIds = tasksOrderInColumn[toColumnId];
-        const newIndex = taskIds?.indexOf(over.id) ?? 0;
+            newOrder: newOrderInColumn,
+          });
+        }
 
-        connectSocket.emit("changeTaskOrder", {
-          taskId: activeTask._id,
-          columnId: toColumnId,
-          newOrder: newIndex,
-        });
-      }
+        return reorderedTasks;
+      });
     }
   };
 
@@ -170,6 +236,8 @@ export const useKanbanBoard = () => {
     handleCreateColumn,
     handleDeleteColumn,
     handleTasksOrderChange,
+    handleCreateTask,
+    handleUpdateTask,
     handleDeleteTask,
   };
 };

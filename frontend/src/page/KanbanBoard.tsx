@@ -17,21 +17,23 @@ const KanbanBoard = () => {
     handleCreateColumn,
     handleDeleteColumn,
     handleTasksOrderChange,
+    handleCreateTask,
+    handleUpdateTask,
     handleDeleteTask,
   } = useKanbanBoard();
 
   return (
-    <div className="m-auto flex min-h-screen w-full items-center overflow-x-auto overflow-y-hidden px-[40px] gap-4">
+    <div className="m-auto flex min-h-screen w-full items-center overflow-x-auto overflow-y-hidden px-[40px] gap-4 bg-gray-50 dark:bg-gray-900/90">
       <DndContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
         <SortableContext items={columnsId}>
           {columns.map((col) => (
             <ColumnContainer
               key={col._id}
               column={col}
-              boardId={boardId}
               tasks={tasks.filter((t) => t.columnId === col._id)}
               onDeleteColumn={handleDeleteColumn}
-              onTasksOrderChange={handleTasksOrderChange}
+              onCreateTask={handleCreateTask}
+              onUpdateTask={handleUpdateTask}
               onDeleteTask={handleDeleteTask}
             />
           ))}
