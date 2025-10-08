@@ -26,7 +26,7 @@ const BoardForm = () => {
 
       if (board.ok && board.data) {
         localStorage.setItem("selectedBoard", board.data._id);
-        localStorage.setItem("currentUser", board.data.createdBy);
+        localStorage.setItem("userName", board.data.createdBy);
       }
 
       console.log("Board creado y guardado en localStorage!");

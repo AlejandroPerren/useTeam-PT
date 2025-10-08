@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Task } from './tasks.schema';
 
 @Injectable()
@@ -31,32 +31,30 @@ export class TasksService {
   remove(id: string) {
     return this.taskModel.findByIdAndDelete(id);
   }
-
-  async changeOrder(taskId: string, columnId: any, newOrder: number) {
+  async changeOrder(taskId: string, columnId: string, newOrder: number) {
     const task = await this.taskModel.findById(taskId);
     if (!task) throw new NotFoundException('Task not found');
 
-    const { boardId, order: oldOrder } = task;
-    if (oldOrder === newOrder) return task;
+    const tasks = await this.taskModel
+      .find({ boardId: task.boardId, columnId })
+      .sort({ order: 1 });
 
-    const direction = newOrder > oldOrder ? 1 : -1;
-
-    await this.taskModel.updateMany(
-      {
-        boardId,
-        columnId,
-        order:
-          direction === 1
-            ? { $gt: oldOrder, $lte: newOrder }
-            : { $lt: oldOrder, $gte: newOrder },
-      },
-      { $inc: { order: -direction } },
+    const oldIndex = tasks.findIndex(
+      (t: any) => (t._id as Types.ObjectId).toString() === taskId,
     );
+    if (oldIndex === -1)
+      throw new NotFoundException('Task not found in column');
 
-    task.order = newOrder;
-    task.columnId = columnId;
-    await task.save();
+    // Sacamos la tarea del arreglo y la insertamos en la nueva posición
+    const [movedTask] = tasks.splice(oldIndex, 1);
+    tasks.splice(newOrder, 0, movedTask);
 
-    return await this.taskModel.find({ boardId, columnId }).sort({ order: 1 });
+    // Reasignamos todos los order de 0..n
+    for (let i = 0; i < tasks.length; i++) {
+      tasks[i].order = i;
+      await tasks[i].save();
+    }
+
+    return tasks;
   }
 }

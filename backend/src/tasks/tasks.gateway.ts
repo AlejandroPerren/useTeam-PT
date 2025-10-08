@@ -91,7 +91,8 @@ export class TasksGateway implements OnGatewayConnection, OnGatewayDisconnect {
       data.newOrder,
     );
     const boardId = tasks[0]?.boardId;
-    if (boardId) this.emitToBoard(boardId, 'on-tasks-reordered', tasks);
+    if (boardId)
+      this.emitToBoard(boardId.toString(), 'on-tasks-reordered', tasks);
     return tasks;
   }
 
