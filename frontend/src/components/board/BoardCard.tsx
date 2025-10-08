@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import type { Board } from "../../types/board.types";
 
 interface BoardCardProps {
@@ -5,17 +6,30 @@ interface BoardCardProps {
 }
 
 const BoardCard = ({ board }: BoardCardProps) => {
+  const navigate = useNavigate();
+
+  const handleOpenBoard = () => {
+    localStorage.setItem("selectedBoard", board._id);
+    navigate("/kanban");
+  };
+
   return (
-    <div className="bg-gray-800 rounded-xl shadow-lg w-72 p-5 flex flex-col justify-between hover:scale-[1.03] transition-transform cursor-pointer">
+    <div className="bg-gray-800 hover:bg-gray-750 rounded-2xl shadow-xl w-72 p-6 flex flex-col justify-between transform hover:scale-105 transition-all duration-200 border border-gray-700/50">
       <div>
-        <h2 className="text-xl font-semibold mb-2 text-white">{board.name}</h2>
+        <h2 className="text-2xl font-semibold mb-3 text-white truncate">
+          {board.name}
+        </h2>
+        <p className="text-gray-400 text-sm mb-4">
+          ID: <span className="text-gray-300">{board._id}</span>
+        </p>
       </div>
 
-      <div className="mt-4">
-        <button className="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg transition-all">
-          Ver Tablero
-        </button>
-      </div>
+      <button
+        onClick={handleOpenBoard}
+        className="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg font-medium transition-all"
+      >
+        Ver Tablero
+      </button>
     </div>
   );
 };

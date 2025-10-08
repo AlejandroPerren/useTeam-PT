@@ -25,8 +25,6 @@ export default function DropdownModal({
 
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
@@ -37,10 +35,10 @@ export default function DropdownModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-start pt-20 z-50">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-start pt-20 z-50">
       <div
         ref={modalRef}
-        className="bg-gray-900 text-white p-6 rounded-2xl shadow-lg w-[90%] max-w-md border border-gray-700 animate-fadeIn"
+        className="bg-gray-900 text-white p-6 rounded-2xl shadow-2xl w-[90%] max-w-md border border-gray-700 animate-fadeIn"
       >
         {children}
       </div>
