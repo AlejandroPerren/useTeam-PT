@@ -1,16 +1,13 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/404";
+import { Outlet } from "react-router-dom";
+import Header from "./components/Header/Header";
 
-const App = () => {
+export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+    <div className="min-h-screen ">
+      <Header />
+      <main className="p-4">
+        <Outlet />
+      </main>
+    </div>
   );
-};
-
-export default App;
+}
