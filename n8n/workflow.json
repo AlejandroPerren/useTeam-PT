@@ -1,0 +1,98 @@
+{
+  "name": "Kanban Backlog Export",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "kanban-export",
+        "options": {
+          "responseData": "Export request received successfully!"
+        }
+      },
+      "id": "WebhookTrigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://kanban-backend:3000/api/board/backlog",
+        "responseFormat": "json"
+      },
+      "id": "GetBacklog",
+      "name": "Get Backlog Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const tasks = items[0].json.tasks || [];\n\nconst csvRows = [\n  ['ID', 'Título', 'Descripción', 'Columna', 'Fecha de creación'],\n  ...tasks.map(t => [t.id, t.title, t.description, t.column, t.createdAt])\n];\n\nconst csvString = csvRows.map(r => r.map(v => `\"${v ?? ''}\"`).join(',')).join('\\n');\n\nreturn [{ json: { csv: csvString } }];"
+      },
+      "id": "TransformToCSV",
+      "name": "Transform to CSV",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "kanban@useteam.io",
+        "toEmail": "admin@useteam.io",
+        "subject": "Exportación del Backlog Kanban",
+        "text": "Adjunto encontrarás el CSV con el backlog actual del tablero Kanban.",
+        "attachments": [
+          {
+            "content": "={{$json[\"csv\"]}}",
+            "type": "text/csv",
+            "name": "kanban-backlog.csv"
+          }
+        ]
+      },
+      "id": "SendEmail",
+      "name": "Send Email with CSV",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [1100, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Backlog Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Backlog Data": {
+      "main": [
+        [
+          {
+            "node": "Transform to CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform to CSV": {
+      "main": [
+        [
+          {
+            "node": "Send Email with CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "id": "kanban-export-flow"
+}

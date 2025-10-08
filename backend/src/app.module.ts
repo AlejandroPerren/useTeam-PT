@@ -6,6 +6,7 @@ import configuration from '../config/configuration';
 import { TasksModule } from './tasks/tasks.module';
 import { ColumnsModule } from './columns/columns.module';
 import { BoardsModule } from './boards/board.module';
+import { ExportModule } from './export/export.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { BoardsModule } from './boards/board.module';
     BoardsModule,
     ColumnsModule,
     TasksModule,
+    ExportModule,
   ],
 })
 export class AppModule {}
